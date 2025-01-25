@@ -1,0 +1,160 @@
+/* Styl głównego kontenera kalendarza */
+.weekly-calendar-container {
+    max-width: 900px;
+    margin: 50px auto;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    background-color: #ffffff;
+    font-family: Arial, sans-serif;
+  }
+  
+  /* Styl nagłówka strony */
+  .calendar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #d32f2f;
+    color: #ffffff;
+    padding: 20px;
+    border-radius: 10px 10px 0 0;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .calendar-header h1 {
+    font-size: 24px;
+    margin: 0;
+  }
+  
+  .calendar-header p {
+    font-size: 18px;
+    margin: 5px 0 0;
+  }
+  
+  /* Styl przycisku wylogowania */
+  .logout-button {
+    background-color: #ffffff;
+    color: #d32f2f;
+    border: 2px solid #ffffff;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+  }
+  
+  .logout-button:hover {
+    background-color: #b71c1c;
+    color: #ffffff;
+  }
+  
+  /* Styl kontenera panelu sterowania */
+  .dashboard-container {
+    margin-top: 30px;
+    text-align: center;
+  }
+  
+  .dashboard-container h1 {
+    color: #d32f2f;
+    font-size: 28px;
+    margin-bottom: 20px;
+  }
+  
+  /* Styl sekcji czujników */
+  .sensor-control {
+    margin-bottom: 20px;
+  }
+  
+  .sensor-control label {
+    display: block;
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 8px;
+    font-weight: bold;
+  }
+  
+  .form-control {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+  }
+  
+  /* Styl przycisku zapisu ustawień */
+  .btn-save {
+    width: 100%;
+    padding: 12px;
+    font-size: 18px;
+    color: white;
+    background-color: #d32f2f;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease-in-out;
+  }
+  
+  .btn-save:hover {
+    background-color: #b71c1c;
+  }
+  
+  /* Styl wiadomości */
+  .message {
+    margin-top: 20px;
+    font-size: 18px;
+    color: #28a745;
+    font-weight: bold;
+  }
+  
+  /* Responsywność */
+  @media (max-width: 768px) {
+    .weekly-calendar-container {
+      padding: 20px;
+    }
+  
+    .calendar-header {
+      flex-direction: column;
+      text-align: center;
+    }
+  
+    .logout-button {
+      margin-top: 10px;
+    }
+  
+    .dashboard-container h1 {
+      font-size: 24px;
+    }
+  }
+
+  .btn-back {
+    width: 100%;
+    padding: 10px;
+    font-size: 18px;
+    color: white;
+    background-color: #1976d2;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease-in-out;
+    margin-top: 10px;
+  }
+  
+  .btn-back:hover {
+    background-color: #135ba0;
+  }
+  
+  .chart {
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  canvas {
+    max-width: 80%; /* Zmniejszenie szerokości do 80% kontenera */
+    height: 300px;  /* Ustawienie mniejszej wysokości wykresu */
+    display: block;
+    margin: 0 auto;
+  }
+  
