@@ -1,0 +1,20 @@
+<div class="navbar">
+  <h2>Panel Zarządzania Czujnikami</h2>
+  <button class="btn-logout" (click)="onLogout()">Wyloguj</button>
+</div>
+
+<div class="device-list-container">
+  <h1>Lista dostępnych urządzeń</h1>
+
+  <button class="btn-add" (click)="promptForDevice()">Dodaj urządzenie</button>
+
+  <ul>
+    <li *ngFor="let device of devices" class="device-item">
+      <span class="device-name">{{ device.name }}</span>
+      <div class="device-actions">
+        <button class="btn-configure" (click)="navigateToDeviceControl(device.id)">Konfiguruj</button>
+        <button class="btn-remove" (click)="removeDevice(device.id)">Usuń</button>
+      </div>
+    </li>
+  </ul>
+</div>
