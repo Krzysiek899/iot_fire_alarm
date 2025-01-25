@@ -14,6 +14,7 @@ import { CommonModule } from '@angular/common';
   imports: [CommonModule, FormsModule, RouterModule],
 })
 export class RegisterComponent {
+  username: string = '';
   email: string = '';
   password: string = '';
   confirmPassword: string = '';
@@ -43,18 +44,23 @@ export class RegisterComponent {
   }
 
   onRegister(): void {
-    if (this.password !== this.confirmPassword) {
-      this.errorMessage = 'Hasła nie są identyczne!';
+    if (!this.username || !this.email || !this.password || !this.confirmPassword) {
+      this.errorMessage = 'Wszystkie pola są wymagane!';
       return;
     }
-  
-    if (this.authService.register(this.email, this.password)) {
+
+    if (this.password !== this.confirmPassword) {
+      this.errorMessage = 'Hasła nie są zgodne!';
+      return;
+    }
+
+    if (this.authService.register(this.username, this.email, this.password)) {
       this.successMessage = 'Rejestracja zakończona sukcesem! Możesz się teraz zalogować.';
       setTimeout(() => {
         this.router.navigate(['/login']);
       }, 2000);
     } else {
-      this.errorMessage = 'Nie udało się zarejestrować!';
+      this.errorMessage = 'Nie udało się zarejestrować. Użytkownik może już istnieć.';
     }
   }
 

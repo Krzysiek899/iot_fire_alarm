@@ -4,11 +4,12 @@ import { RegisterComponent } from './components/register/register.component';
 import { ClientInterfaceComponent } from './components/client-interface/client-interface.component';
 import { GuestComponent } from './components/guest/guest.component';
 import { DeviceInterfaceComponent } from './components/device-interface/device-interface.component';
+import { authGuard } from './auth.guard';
 
 export const routes: Routes = [
-{
+  {
     path: '',
-    component: GuestComponent  // Domyślna strona to "guest"
+    component: GuestComponent  // Domyślna strona (gościa)
   },
   {
     path: 'login',
@@ -21,13 +22,15 @@ export const routes: Routes = [
   {
     path: 'client',
     component: ClientInterfaceComponent,  // Interfejs klienta dostępny po zalogowaniu
+    canActivate: [authGuard]  // Zabezpieczenie trasy przed nieautoryzowanym dostępem
   },
   {
     path: 'device-interface/:id',
-    component: DeviceInterfaceComponent,  // Interfejs klienta dostępny po zalogowaniu
+    component: DeviceInterfaceComponent,  // Interfejs urządzenia
+    canActivate: [authGuard]  // Zabezpieczenie trasy
   },
   {
     path: '**',
-    redirectTo: ''  // W przypadku nieznanej ścieżki przekierowanie na stronę główną (guest)
+    redirectTo: ''  // Przekierowanie do strony głównej w przypadku nieznanej ścieżki
   }
 ];

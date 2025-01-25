@@ -16,7 +16,7 @@ client.on('connect', () => {
     console.log('Połączono z brokerem MQTT');
 
     // Subskrypcja tematów dla odbioru danych
-    client.subscribe('#', (err) => {
+    client.subscribe('+/+/sensors/#', (err) => {
         if (!err) {
             console.log('Subskrypcja wszystkich tematów MQTT');
         } else {
@@ -85,33 +85,6 @@ function updateSensorData(mac, type, value) {
     });
 }
 
-// Funkcja aktualizacji progów alarmowych
-function updateThreshold(mac, type, value) {
-    const columnMap = {
-        'temperature': 'temperature_threshold',
-        'pressure': 'pressure_threshold',
-        'smoke': 'smoke_threshold'
-    };
-
-    const columnName = columnMap[type];
-    if (!columnName) {
-        console.error('Nieznany typ progu:', type);
-        return;
-    }
-
-    const query = `UPDATE thresholds 
-                   SET ${columnName} = ? 
-                   WHERE device_id = (SELECT id FROM devices WHERE mac_address = ?)`;
-
-    db.query(query, [parseFloat(value), mac], (err, result) => {
-        if (err) {
-            console.error(`Błąd aktualizacji progu ${type}:`, err);
-        } else {
-            console.log(`Próg ${type} zaktualizowany dla urządzenia ${mac}`);
-        }
-    });
-}
-
 // Funkcja obsługi alarmów
 function handleAlarm(mac, message) {
     const query = `INSERT INTO notifications (user_id, device_id, message, status, created_at)
@@ -122,20 +95,6 @@ function handleAlarm(mac, message) {
             console.error('Błąd dodawania alarmu:', err);
         } else {
             console.log(`Alarm zapisany dla urządzenia ${mac}: ${message}`);
-        }
-    });
-}
-
-// Funkcja resetowania urządzenia
-function resetDevice(mac) {
-    const query = `DELETE FROM sensor_readings WHERE device_id = 
-                   (SELECT id FROM devices WHERE mac_address = ?)`;
-
-    db.query(query, [mac], (err, result) => {
-        if (err) {
-            console.error(`Błąd resetowania danych urządzenia ${mac}:`, err);
-        } else {
-            console.log(`Dane urządzenia ${mac} zresetowane`);
         }
     });
 }

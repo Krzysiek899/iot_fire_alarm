@@ -38,19 +38,20 @@
       </div>
     </div>
   
-    <!-- Sekcja wykresów -->
-    <div class="charts-container">
-      <h2>Odczyty z czujników</h2>
-      
-      <div class="chart">
-        <h3>Temperatura (BMP280)</h3>
-        <canvas id="temperatureChart"></canvas>
-      </div>
-  
-      <div class="chart">
-        <h3>MQ2 - Wykrycie gazu</h3>
-        <canvas id="mq2Chart"></canvas>
-      </div>
+  <!-- Wykres temperatury BMP280 -->
+  <div class="chart-container">
+    <h3>Temperatura (BMP280)</h3>
+    <div class="chart-scroll">
+      <canvas id="temperatureChart"></canvas>
     </div>
   </div>
+
+  <!-- Wykres MQ2 -->
+  <div class="chart-container">
+    <h3>Czujnik MQ2 - Stężenie gazu</h3>
+    <div class="chart-scroll">
+      <canvas id="mq2Chart"></canvas>
+    </div>
+  </div>
+</div>
   

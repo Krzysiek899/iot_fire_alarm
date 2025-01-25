@@ -147,14 +147,14 @@
   }
   
   .chart {
-    max-width: 600px;
-    margin: 0 auto;
+    max-width: 600px; /* Ograniczenie szerokości */
+    margin: 0 auto;   /* Wycentrowanie wykresu */
+    padding: 20px;
   }
-
+  
   canvas {
-    max-width: 80%; /* Zmniejszenie szerokości do 80% kontenera */
-    height: 300px;  /* Ustawienie mniejszej wysokości wykresu */
+    width: 100% !important;
+    height: 300px !important; /* Zmniejszenie wysokości wykresu */
     display: block;
-    margin: 0 auto;
   }
   

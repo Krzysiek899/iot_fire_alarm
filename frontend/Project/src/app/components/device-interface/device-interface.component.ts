@@ -73,12 +73,21 @@ export class DeviceInterfaceComponent {
             data: this.temperatureData,
             borderColor: 'red',
             borderWidth: 2,
-            backgroundColor: 'rgba(255, 99, 132, 0.2)'
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            pointRadius: 3,
+            tension: 0.3
           }]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false
+          maintainAspectRatio: true,
+          aspectRatio: 2,
+          scales: {
+            y: {
+              suggestedMin: Math.min(...this.temperatureData) - 2,
+              suggestedMax: Math.max(...this.temperatureData) + 2
+            }
+          }
         }
       });
     }
@@ -90,16 +99,25 @@ export class DeviceInterfaceComponent {
         data: {
           labels: ['1 min', '2 min', '3 min', '4 min', '5 min', '6 min', '7 min'],
           datasets: [{
-            label: 'MQ2 - Stężenie gazu',
+            label: 'Stężenie gazu MQ2',
             data: this.mq2Data,
             borderColor: 'blue',
             borderWidth: 2,
-            backgroundColor: 'rgba(54, 162, 235, 0.2)'
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            pointRadius: 3,
+            tension: 0.3
           }]
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false
+          maintainAspectRatio: true,
+          aspectRatio: 2,
+          scales: {
+            y: {
+              suggestedMin: Math.min(...this.mq2Data) - 50,
+              suggestedMax: Math.max(...this.mq2Data) + 50
+            }
+          }
         }
       });
     }

@@ -6,6 +6,10 @@ import { provideHttpClient } from '@angular/common/http';
 import { AppComponent } from './app/app.component';
 import { routes } from './app/app.routes';
 
+export function tokenGetter() {
+  return localStorage.getItem('token');
+}
+
 bootstrapApplication(AppComponent, {
   providers: [
     provideRouter(routes),  // Dodanie obsługi routingu

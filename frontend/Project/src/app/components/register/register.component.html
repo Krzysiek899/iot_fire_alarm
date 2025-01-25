@@ -5,7 +5,21 @@
       <form (ngSubmit)="onRegister()">
         <p *ngIf="successMessage" class="success-message">{{ successMessage }}</p>
         <p *ngIf="errorMessage" class="error-message">{{ errorMessage }}</p>
-        
+
+
+        <!-- Username -->
+        <div class="form-element">
+          <label for="username">Nazwa użytkownika</label>
+          <input 
+            type="text" 
+            id="username" 
+            [(ngModel)]="username" 
+            name="username" 
+            class="form-control" 
+            placeholder="Wpisz nazwę użytkownika" 
+            required
+          />
+        </div>
         
         <!-- Email -->
         <div class="form-element">
