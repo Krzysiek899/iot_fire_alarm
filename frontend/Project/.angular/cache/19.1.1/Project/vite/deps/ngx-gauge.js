@@ -3,7 +3,7 @@ import {
   DecimalPipe,
   NgSwitch,
   NgSwitchCase
-} from "./chunk-6HM46HDU.js";
+} from "./chunk-YNMQ6GPR.js";
 import {
   Component,
   ContentChild,
@@ -43,11 +43,11 @@ import {
   ɵɵtext,
   ɵɵtextInterpolate,
   ɵɵviewQuery
-} from "./chunk-HH4NLXCO.js";
-import "./chunk-5OPE3T2R.js";
+} from "./chunk-HIBZUCJF.js";
 import "./chunk-4N4GOYJH.js";
+import "./chunk-5OPE3T2R.js";
 import "./chunk-FHTVLBLO.js";
-import "./chunk-WDMUDEB6.js";
+import "./chunk-7RSYZEEK.js";
 
 // node_modules/ngx-gauge/fesm2022/ngx-gauge.mjs
 var _c0 = ["canvas"];

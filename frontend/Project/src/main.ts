@@ -2,6 +2,8 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { provideRouter } from '@angular/router';
 import { importProvidersFrom } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
+import { MqttService, IMqttServiceOptions, MqttModule} from 'ngx-mqtt';
+import {MQTT_SERVICE_OPTIONS} from "./app/mqtt-config";
 
 
 import { AppComponent } from './app/app.component';
@@ -14,6 +16,7 @@ export function tokenGetter() {
 
 bootstrapApplication(AppComponent, {
   providers: [
+    importProvidersFrom(MqttModule.forRoot(MQTT_SERVICE_OPTIONS)),
     provideRouter(routes),  // Dodanie obsługi routingu
     provideHttpClient(),    // Dodanie obsługi HTTP
     importProvidersFrom()

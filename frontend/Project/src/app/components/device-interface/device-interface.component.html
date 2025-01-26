@@ -18,7 +18,7 @@
         <div class="sensor-gauge">
             <h3>Aktualna Temperatura (BMP280)</h3>
             <ngx-gauge
-                    [value]="temperatureValue ?? 0"
+                    [value]="(temperature$ | async) ?? 0"
                     [min]="0"
                     [max]="50"
                     [label]="'Temperatura (°C)'"
@@ -34,7 +34,7 @@
         <div class="sensor-gauge">
             <h3>Stężenie Gazu (MQ2)</h3>
             <ngx-gauge
-                    [value]="mq2Value ?? 0"
+                    [value]="(smoke$ | async) ?? 0"
                     [min]="0"
                     [max]="500"
                     [label]="'MQ2 ppm'"

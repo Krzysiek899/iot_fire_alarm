@@ -6,7 +6,7 @@ import { NgxGaugeModule } from 'ngx-gauge';
 import { Router, ActivatedRoute } from '@angular/router';
 import { DeviceService } from '../../services/device.service';
 import { Device } from '../../models/device.model'; // Upewnij się, że masz interfejs Device
-import { Subscription, interval } from 'rxjs';
+import {Subscription, interval, Observable, filter, startWith, catchError, of} from 'rxjs';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { map } from 'rxjs/operators';
 import {
@@ -20,6 +20,7 @@ import {
   Tooltip,
   Legend, ChartOptions
 } from 'chart.js';
+import {MqttSensorService} from "../../services/mqtt-client.service";
 
 
 @Component({
@@ -32,16 +33,20 @@ import {
 })
 export class DeviceInterfaceComponent implements OnInit, OnDestroy, AfterViewInit {
   deviceId!: string;
-  temperatureThreshold: number = 30;
-  mg2Threshold: number = 50;
-  co2Threshold: number = 400; // Dodany próg CO2
+  temperatureThreshold: number | undefined;
+  mg2Threshold: number | undefined;
   device: Device | undefined;
   message: string = '';
   alarmMessage: string = '';
 
+  temperature$!: Observable<number>;
+  pressure$!: Observable<number>;
+  smoke$!: Observable<number>;
+  alarms$!: Observable<string>;
+
   // Wartości czujników
-  temperatureValue: number = 22;
-  mq2Value: number = 150;
+  // temperatureValue: number = 22;
+  // mq2Value: number = 150;
 
   // Dane do wykresów
   temperatureData: number[] = [];
@@ -53,12 +58,13 @@ export class DeviceInterfaceComponent implements OnInit, OnDestroy, AfterViewIni
   mq2Chart!: Chart;
 
   // Subskrypcje
-  private subscriptions: Subscription = new Subscription();
+   private subscriptions: Subscription = new Subscription();
 
   constructor(
       private route: ActivatedRoute,
       private router: Router,
-      private deviceService: DeviceService
+      private deviceService: DeviceService,
+      private mqtt: MqttSensorService
   ) {}
 
   ngOnInit(): void {
@@ -66,9 +72,50 @@ export class DeviceInterfaceComponent implements OnInit, OnDestroy, AfterViewIni
     this.subscriptions.add(
         this.route.params.subscribe(params => {
           this.deviceId = params['id'];
-          this.fetchDeviceData();
+          this.fetchDeviceData().then(() => {
+            if (this.device) {
+              this.initializeMqttSubscriptions();
+            }
+          });
         })
     );
+
+  }
+
+  initializeMqttSubscriptions() {
+    if (this.device){
+      const topic = this.device.mqtt_topic;
+      const sensorData$ = this.mqtt.subscribeToTopic(topic);
+      console.log("Subskrypcja topicu.");
+
+      this.temperature$ = sensorData$.pipe(
+          filter(data => data.type === 'temperature'),
+          map(data => this.toNumber(data.value)),
+          startWith(0),  // Domyślna wartość przed otrzymaniem danych
+          catchError(() => of(0)) // Obsługa błędów
+      );
+
+      this.pressure$ = sensorData$.pipe(
+          filter(data => data.type === 'pressure'),
+          map(data => this.toNumber(data.value)),
+          startWith(0),
+          catchError(() => of(0))
+      );
+
+      this.smoke$ = sensorData$.pipe(
+          filter(data => data.type === 'smoke'),
+          map(data => this.toNumber(data.value)),
+          startWith(0),
+          catchError(() => of(0))
+      );
+
+      this.alarms$ = sensorData$.pipe(
+          filter(data => data.type === 'alarm'),
+          map(data => data.value)
+      );
+    }
+
+
   }
 
     // Inicjalizacja wykresów
@@ -76,22 +123,22 @@ export class DeviceInterfaceComponent implements OnInit, OnDestroy, AfterViewIni
       //this.initializeCharts()
 
 
-    // Symulowanie odbioru danych sensorów co 2 sekundy
-    this.subscriptions.add(
-        interval(2000).pipe(
-            map(() => this.getRandomValue(20, 30))
-        ).subscribe(value => {
-          this.updateTemperature(value);
-        })
-    );
-
-    this.subscriptions.add(
-        interval(2000).pipe(
-            map(() => this.getRandomValue(100, 300))
-        ).subscribe(value => {
-          this.updateMq2(value);
-        })
-    );
+    // // Symulowanie odbioru danych sensorów co 2 sekundy
+    // this.subscriptions.add(
+    //     interval(2000).pipe(
+    //         map(() => this.getRandomValue(20, 30))
+    //     ).subscribe(value => {
+    //       this.updateTemperature(value);
+    //     })
+    // );
+    //
+    // this.subscriptions.add(
+    //     interval(2000).pipe(
+    //         map(() => this.getRandomValue(100, 300))
+    //     ).subscribe(value => {
+    //       this.updateMq2(value);
+    //     })
+    // );
 
     // Symulowanie alarmów co 10 sekund
     // this.subscriptions.add(
@@ -105,17 +152,19 @@ export class DeviceInterfaceComponent implements OnInit, OnDestroy, AfterViewIni
     this.subscriptions.unsubscribe();
   }
 
-  fetchDeviceData(): void {
-    this.deviceService.getDevice(this.deviceId).subscribe({
-      next: (device: Device) => {
-        this.device = device;
-        // Możesz również zainicjalizować inne dane urządzenia tutaj
-      },
-      error: (err) => {
-        console.error('Błąd podczas pobierania danych urządzenia:', err);
-        this.message = 'Nie udało się pobrać danych urządzenia.';
-      }
-    });
+  private toNumber(value: any): number {
+    const num = Number(value);
+    return isNaN(num) ? 0 : num;
+  }
+
+  async fetchDeviceData(): Promise<void> {
+    try {
+      this.device = await this.deviceService.getDevice(this.deviceId).toPromise();
+      console.log('Dane urządzenia pobrane:', this.device);
+    } catch (err) {
+      console.error('Błąd podczas pobierania danych urządzenia:', err);
+      this.message = 'Nie udało się pobrać danych urządzenia.';
+    }
   }
 
   initializeCharts(): void {
@@ -190,25 +239,25 @@ export class DeviceInterfaceComponent implements OnInit, OnDestroy, AfterViewIni
     return Math.floor(Math.random() * (max - min + 1)) + min;
   }
 
-  updateTemperature(value: number): void {
-    console.log("UpdateTemperature", value);
-    this.temperatureValue = value;
-    this.temperatureData.push(value);
-    if (this.temperatureData.length > 7) {
-      this.temperatureData.shift();
-    }
-    this.temperatureChart?.update();
-  }
+  // updateTemperature(value: number): void {
+  //   console.log("UpdateTemperature", value);
+  //   this.temperatureValue = value;
+  //   this.temperatureData.push(value);
+  //   if (this.temperatureData.length > 7) {
+  //     this.temperatureData.shift();
+  //   }
+  //   this.temperatureChart?.update();
+  // }
 
-  updateMq2(value: number): void {
-    console.log("UpdateMq2", value);
-    this.mq2Value = value;
-    this.mq2Data.push(value);
-    if (this.mq2Data.length > 7) {
-      this.mq2Data.shift();
-    }
-    this.mq2Chart?.update();
-  }
+  // updateMq2(value: number): void {
+  //   console.log("UpdateMq2", value);
+  //   this.mq2Value = value;
+  //   this.mq2Data.push(value);
+  //   if (this.mq2Data.length > 7) {
+  //     this.mq2Data.shift();
+  //   }
+  //   this.mq2Chart?.update();
+  // }
 
 
   triggerAlarm(message: string): void {
@@ -218,35 +267,40 @@ export class DeviceInterfaceComponent implements OnInit, OnDestroy, AfterViewIni
 
   saveSettings(): void {
     // Aktualizacja progów w backendzie
-    this.deviceService.updateThreshold(this.deviceId, 'temperature', this.temperatureThreshold).subscribe({
-      next: () => {
-        this.message = `Próg temperatury został zaktualizowany!`;
-      },
-      error: (err) => {
-        console.error('Błąd podczas aktualizacji progu temperatury:', err);
-        this.message = 'Nie udało się zaktualizować progu temperatury.';
-      }
-    });
 
-    this.deviceService.updateThreshold(this.deviceId, 'smoke', this.mg2Threshold).subscribe({
-      next: () => {
-        this.message += ` Próg czujnika MQ2 został zaktualizowany!`;
-      },
-      error: (err) => {
-        console.error('Błąd podczas aktualizacji progu MQ2:', err);
-        this.message += ' Nie udało się zaktualizować progu MQ2.';
-      }
-    });
+    if(this.temperatureThreshold){
+      this.deviceService.updateThreshold(this.deviceId, 'temperature', this.temperatureThreshold).subscribe({
+        next: () => {
+          this.message = `Próg temperatury został zaktualizowany!`;
+        },
+        error: (err) => {
+          console.error('Błąd podczas aktualizacji progu temperatury:', err);
+          this.message = 'Nie udało się zaktualizować progu temperatury.';
+        }
+      });
+    }
 
-    this.deviceService.updateThreshold(this.deviceId, 'co2', this.co2Threshold).subscribe({
-      next: () => {
-        this.message += ` Próg CO2 został zaktualizowany!`;
-      },
-      error: (err) => {
-        console.error('Błąd podczas aktualizacji progu CO2:', err);
-        this.message += ' Nie udało się zaktualizować progu CO2.';
-      }
-    });
+    if(this.mg2Threshold){
+      this.deviceService.updateThreshold(this.deviceId, 'smoke', this.mg2Threshold).subscribe({
+        next: () => {
+          this.message += ` Próg czujnika MQ2 został zaktualizowany!`;
+        },
+        error: (err) => {
+          console.error('Błąd podczas aktualizacji progu MQ2:', err);
+          this.message += ' Nie udało się zaktualizować progu MQ2.';
+        }
+      });
+    }
+
+    // this.deviceService.updateThreshold(this.deviceId, 'co2', this.co2Threshold).subscribe({
+    //   next: () => {
+    //     this.message += ` Próg CO2 został zaktualizowany!`;
+    //   },
+    //   error: (err) => {
+    //     console.error('Błąd podczas aktualizacji progu CO2:', err);
+    //     this.message += ' Nie udało się zaktualizować progu CO2.';
+    //   }
+    // });
   }
 
   dismissAlarm(): void {

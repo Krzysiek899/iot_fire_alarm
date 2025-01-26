@@ -38,12 +38,12 @@ client.on('message', (topic, message) => {
 
         // Obsługa odczytów z czujników
         if (category === 'sensors') {
-            updateSensorData(macAddress, subCategory, message.toString());
+            // updateSensorData(macAddress, subCategory, message.toString());
         }
 
         // Obsługa alarmów
         if (category === 'alarms') {
-            handleAlarm(macAddress, message.toString());
+            // handleAlarm(macAddress, message.toString());
         }
     }
 });
