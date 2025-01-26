@@ -3,7 +3,6 @@ const db = require('../config/db');
 
 const router = express.Router();
 
-
 /**
  * Rejestracja urządzenia za pomocą tokena powiązania
  */
@@ -44,21 +43,36 @@ router.post('/register-device', (req, res) => {
                 return res.status(500).json({ message: 'Błąd podczas dodawania urządzenia', error: err });
             }
 
-            // Oznaczenie tokena jako użytego
-            const updateTokenQuery = `
-                UPDATE user_tokens SET used = TRUE WHERE token = ?
+            const deviceId = result.insertId;
+
+            // Ustawienie domyślnych progów dla urządzenia
+            const insertThresholdsQuery = `
+                INSERT INTO thresholds (device_id, temperature_threshold,  smoke_threshold)
+                VALUES (?, ?, ?)
             `;
 
-            db.query(updateTokenQuery, [token], (err) => {
+            const defaultThresholds = [deviceId, 25.0, 0.5]; // Domyślne wartości progów
+
+            db.query(insertThresholdsQuery, defaultThresholds, (err) => {
                 if (err) {
-                    return res.status(500).json({ message: 'Błąd aktualizacji tokena', error: err });
+                    return res.status(500).json({ message: 'Błąd ustawiania domyślnych progów', error: err });
                 }
 
-                res.json({ message: 'Urządzenie zarejestrowane pomyślnie', mqtt_topic: mqttTopic });
+                // Oznaczenie tokena jako użytego
+                const updateTokenQuery = `
+                    UPDATE user_tokens SET used = TRUE WHERE token = ?
+                `;
+
+                db.query(updateTokenQuery, [token], (err) => {
+                    if (err) {
+                        return res.status(500).json({ message: 'Błąd aktualizacji tokena', error: err });
+                    }
+
+                    res.json({ message: 'Urządzenie zarejestrowane pomyślnie', mqtt_topic: mqttTopic });
+                });
             });
         });
     });
 });
-
 
 module.exports = router;

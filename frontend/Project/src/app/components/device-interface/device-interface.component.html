@@ -1,94 +1,107 @@
+<!-- device-interface.component.html -->
 <div class="navbar">
-  <h2>Panel Sterowania</h2>
-  <div class="navbar-actions">
-    <button class="btn-nav" (click)="navigateToDeviceList()">Lista urządzeń</button>
-    <button class="btn-logout" (click)="onLogout()">Wyloguj</button>
-  </div>
+    <h2>Panel Sterowania</h2>
+    <div class="navbar-actions">
+        <button class="btn-nav" (click)="navigateToDeviceList()">Lista urządzeń</button>
+        <button class="btn-logout" (click)="onLogout()">Wyloguj</button>
+    </div>
 </div>
 
-<div class="weekly-calendar-container">
-  <header>
-    <div>
-      <h1>Sterowanie urządzeniem ID: {{ deviceId }}</h1>
-    </div>
-  </header>
+<div class="device-container">
+    <header>
+        <div>
+            <h1>Sterowanie urządzeniem: {{ device?.device_name }}</h1>
+        </div>
+    </header>
 
-  <div class="dashboard-container">
-    <h1>Panel Sterowania Czujnikami</h1>
+    <div class="gauge-container">
+        <div class="sensor-gauge">
+            <h3>Aktualna Temperatura (BMP280)</h3>
+            <ngx-gauge
+                    [value]="temperatureValue ?? 0"
+                    [min]="0"
+                    [max]="50"
+                    [label]="'Temperatura (°C)'"
+                    [thick]="15"
+                    [cap]="'round'"
+                    [foregroundColor]="'linear-gradient(to right, #00ff00, #ff0000)'"
+                    [size]="250"
+                    [type]="'full'"
+                    [animate]="true"
+            ></ngx-gauge>
+        </div>
 
-    <div class="sensor-control">
-      <label for="temperatureThreshold">Próg Temperatury (°C):</label>
-      <input 
-        type="number" 
-        id="temperatureThreshold" 
-        [(ngModel)]="temperatureThreshold" 
-        class="form-control"
-      />
-    </div>
+        <div class="sensor-gauge">
+            <h3>Stężenie Gazu (MQ2)</h3>
+            <ngx-gauge
+                    [value]="mq2Value ?? 0"
+                    [min]="0"
+                    [max]="500"
+                    [label]="'MQ2 ppm'"
+                    [thick]="15"
+                    [cap]="'round'"
+                    [foregroundColor]="'linear-gradient(to right, #00ff00, #ff0000)'"
+                    [size]="250"
+                    [type]="'full'"
+                    [animate]="true"
+            ></ngx-gauge>
+        </div>
 
-    <div class="sensor-control">
-      <label for="mg2Threshold">Próg Czujnika mq2:</label>
-      <input 
-        type="number" 
-        id="mg2Threshold" 
-        [(ngModel)]="mg2Threshold" 
-        class="form-control"
-      />
-    </div>
-
-    <button (click)="saveSettings()" class="btn-save">Zapisz Ustawienia</button>
-    <button (click)="removeDevice()" class="btn-remove">Usuń urządzenie</button>
-
-    <div *ngIf="message" class="message">
-      {{ message }}
-    </div>
-  </div>
-
-  <!-- Sekcja wykresów -->
-  <div class="charts-container">
-    <div class="chart-container">
-      <h3>Temperatura (BMP280)</h3>
-      <canvas id="temperatureChart"></canvas>
     </div>
 
-    <div class="chart-container">
-      <h3>Czujnik MQ2 - Stężenie gazu</h3>
-      <canvas id="mq2Chart"></canvas>
-    </div>
-  </div>
+    <div class="dashboard-container">
+        <h1>Ustawienia progów</h1>
 
-  <!-- Sekcja wskaźników -->
-  <div class="gauge-container">
-    <div class="sensor-gauge">
-      <h3>Aktualna Temperatura (BMP280)</h3>
-      <ngx-gauge 
-        [value]="temperatureValue ?? 0"
-        [min]="0" 
-        [max]="50" 
-        [label]="'Temperatura (°C)'" 
-        [thick]="15"
-        [cap]="'round'"
-        [foregroundColor]="'linear-gradient(to right, #00ff00, #ff0000)'"
-        [size]="250"
-        [type]="'full'"
-        [animated]="true"
-      ></ngx-gauge>
+        <div class="sensor-control">
+            <label for="temperatureThreshold">Próg Temperatury (°C):</label>
+            <input
+                    type="number"
+                    id="temperatureThreshold"
+                    [(ngModel)]="temperatureThreshold"
+                    class="form-control"
+            />
+        </div>
+
+        <div class="sensor-control">
+            <label for="mg2Threshold">Próg Czujnika MQ2:</label>
+            <input
+                    type="number"
+                    id="mg2Threshold"
+                    [(ngModel)]="mg2Threshold"
+                    class="form-control"
+            />
+        </div>
+
+        <button (click)="saveSettings()" class="btn-save">Zapisz Ustawienia</button>
+
+        <div *ngIf="message" class="message">
+            {{ message }}
+        </div>
+
+        <!-- Wyświetlanie alarmu -->
+        <div *ngIf="alarmMessage" class="alarm-message-overlay">
+            <div class="alarm-message">
+                <strong>ALARM:</strong> {{ alarmMessage }}
+                <button class="close-btn" (click)="dismissAlarm()">&#10006;</button>
+            </div>
+        </div>
+
+
     </div>
 
-    <div class="sensor-gauge">
-      <h3>Stężenie Gazu (MQ2)</h3>
-      <ngx-gauge 
-        [value]="mq2Value ?? 0" 
-        [min]="0" 
-        [max]="500" 
-        [label]="'MQ2 ppm'" 
-        [thick]="15"
-        [cap]="'round'"
-        [foregroundColor]="'linear-gradient(to right, #00ff00, #ff0000)'"
-        [size]="250"
-        [type]="'full'"
-        [animated]="true"
-      ></ngx-gauge> 
-    </div>
-  </div>
+<!--    &lt;!&ndash; Sekcja wykresów &ndash;&gt;-->
+<!--    <div class="charts-container">-->
+<!--        <div class="chart-container">-->
+<!--            <h3>Temperatura (BMP280)</h3>-->
+<!--            <canvas id="temperatureChart"></canvas>-->
+<!--        </div>-->
+
+<!--        <div class="chart-container">-->
+<!--            <h3>Czujnik MQ2 - Stężenie gazu</h3>-->
+<!--            <canvas id="mq2Chart"></canvas>-->
+<!--        </div>-->
+<!--    </div>-->
+
+    <!-- Sekcja wskaźników -->
+
 </div>

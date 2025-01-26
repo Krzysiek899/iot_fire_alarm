@@ -54,14 +54,17 @@ export class RegisterComponent {
       return;
     }
 
-    if (this.authService.register(this.username, this.email, this.password)) {
-      this.successMessage = 'Rejestracja zakończona sukcesem! Możesz się teraz zalogować.';
-      setTimeout(() => {
-        this.router.navigate(['/login']);
-      }, 2000);
-    } else {
-      this.errorMessage = 'Nie udało się zarejestrować. Użytkownik może już istnieć.';
-    }
+    this.authService.register(this.username, this.email, this.password).subscribe({
+      next: (response) => {
+        this.successMessage = 'Rejestracja zakończona sukcesem! Możesz się teraz zalogować.';
+        setTimeout(() => {
+          this.router.navigate(['/login']);
+        }, 2000);
+      },
+      error: (error) => {
+        this.errorMessage = error.error?.message || 'Nie udało się zarejestrować. Spróbuj ponownie.';
+      }
+    });
   }
 
   // Funkcja nawigacji do widoku niezalogowanego użytkownika

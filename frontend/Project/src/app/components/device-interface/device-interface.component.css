@@ -1,5 +1,5 @@
 /* Stylizacja kontenera strony */
-.weekly-calendar-container {
+.device-container {
   margin: 50px auto;
   padding: 30px;
   max-width: 1300px;
@@ -41,7 +41,7 @@ canvas {
 /* Stylizacja sekcji wskaźników */
 .gauge-container {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   flex-wrap: wrap;
   gap: 20px;
   margin-top: 30px;
@@ -199,3 +199,65 @@ canvas {
     font-size: 14px;
   }
 }
+
+.alarm-message-overlay {
+  position: fixed; /* Ustawienie na całym ekranie */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6); /* Półprzezroczyste tło */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Zapewnia widoczność nad innymi elementami */
+}
+
+.alarm-message {
+  position: relative;
+  background-color: red; /* Czerwone tło */
+  color: white; /* Biały tekst */
+  padding: 30px 50px;
+  font-size: 24px;
+  font-weight: bold;
+  border: 3px solid white; /* Biała ramka */
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+  text-align: center;
+  max-width: 80%;
+  animation: pulse 1.5s infinite alternate; /* Efekt pulsowania */
+}
+
+/* Efekt migotania */
+@keyframes pulse {
+  from {
+    transform: scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+/* Styl dla przycisku zamykania */
+.close-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: white;
+  color: red;
+  border: none;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  transition: transform 0.2s ease-in-out;
+}
+
+.close-btn:hover {
+  transform: scale(1.1);
+}
+

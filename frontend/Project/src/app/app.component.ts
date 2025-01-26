@@ -1,5 +1,8 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { MqttModule } from 'ngx-mqtt';
+import { MQTT_SERVICE_OPTIONS } from './mqtt-config';
+
 
 @Component({
   selector: 'app-root',

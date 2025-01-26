@@ -20,12 +20,12 @@ export const routes: Routes = [
     component: RegisterComponent  // Strona rejestracji
   },
   {
-    path: 'client',
+    path: 'devices',
     component: ClientInterfaceComponent,  // Interfejs klienta dostępny po zalogowaniu
     canActivate: [authGuard]  // Zabezpieczenie trasy przed nieautoryzowanym dostępem
   },
   {
-    path: 'device-interface/:id',
+    path: 'devices/:id',
     component: DeviceInterfaceComponent,  // Interfejs urządzenia
     canActivate: [authGuard]  // Zabezpieczenie trasy
   },

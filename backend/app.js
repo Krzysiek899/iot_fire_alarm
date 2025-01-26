@@ -7,6 +7,7 @@ const tokensRoutes = require('./routes/tokens');
 const pairingRoutes = require('./routes/pairing');
 const morgan = require('morgan');
 const mqttClient = require('./mqtt/mqttClient');
+const cors = require('cors')
 
 require('dotenv').config();
 
@@ -17,11 +18,16 @@ app.use(morgan('dev'));
 // Middleware
 app.use(express.json());
 
+app.use(cors({
+    origin: 'http://localhost:4200',  // Adres frontendu
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Authorization'
+}));
+
 // Trasy
 app.use('/api/auth', authRoutes);
 app.use('/api/test', testRoutes);
 app.use('/api/devices', devicesRoutes);
-app.use('/api/notifications', notificationRoutes);
 app.use('/api/tokens', tokensRoutes);
 app.use('/api/pairing', pairingRoutes);
 

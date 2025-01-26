@@ -42,13 +42,9 @@ router.post('/register', async (req, res) => {
                 (err, result) => {
                     if (err) return res.status(500).json({ message: 'Błąd rejestracji', error: err });
 
-                    // Generowanie tokena JWT po pomyślnej rejestracji
-                    const token = jwt.sign({ id: userId, email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
                     res.status(201).json({
                         message: 'Rejestracja udana',
-                        userId,
-                        token
+                        userId
                     });
                 }
             );

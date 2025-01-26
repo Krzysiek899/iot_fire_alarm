@@ -3,8 +3,8 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { FormsModule } from '@angular/forms';
-
-
+import { DeviceService } from '../../services/device.service';
+import { Device } from '../../models/device.model';
 
 @Component({
   selector: 'app-client-interface',
@@ -14,80 +14,98 @@ import { FormsModule } from '@angular/forms';
   styleUrls: ['./client-interface.component.css'],
 })
 
-
 export class ClientInterfaceComponent implements OnInit {
-  currentDate: Date;
-  //Zmiany czujnika
-  temperatureThreshold: number = 30;
-  mg2Threshold: number = 50;
   message: string = '';
+  devices: Device[] = [];
+  pairingToken: string | null = null;  // Przechowywanie tokena do wyświetlenia
+  showToken: boolean = false;  // Kontrola widoczności tokena
 
-  // Konstruktor komponentu
   constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {
-    this.currentDate = new Date();
-  }
+      private authService: AuthService,
+      private deviceService: DeviceService,
+      private router: Router
+  ) {}
 
-  // Inicjalizacja komponentu
   ngOnInit(): void {
-    
-  } 
-
-  saveSettings() {
-    // Symulacja zapisu do bazy danych
-    console.log('Zapisane ustawienia:', {
-      temperatureThreshold: this.temperatureThreshold,
-      mg2Threshold: this.mg2Threshold
-    });
-    this.message = 'Ustawienia zostały zapisane pomyślnie!';
+    this.loadDevices();
   }
- 
+
+  // Pobranie listy urządzeń z backendu
+  loadDevices(): void {
+    this.deviceService.getDevices().subscribe({
+      next: (data) => {
+        this.devices = data;
+      },
+      error: (error) => {
+        this.message = 'Błąd pobierania urządzeń.';
+        console.error(error);
+      }
+    });
+  }
+
+  // Generowanie tokena parowania i jego wyświetlenie
+  generatePairingToken(): void {
+    this.deviceService.generate_pairing_token().subscribe({
+      next: (token) => {
+        this.pairingToken = token;
+        this.showToken = true;
+      },
+      error: (err) => {
+        this.message = 'Błąd generowania tokena!';
+        console.error(err);
+      }
+    });
+  }
+
+  // Ukrycie tokena po kliknięciu "Zamknij"
+  closeTokenDisplay(): void {
+    this.showToken = false;
+    this.pairingToken = null;
+  }
+
+  // Wylogowanie użytkownika
   onLogout(): void {
     this.authService.logout();
-    this.router.navigate(['/login']);  // Przekierowanie do strony logowania
+    this.router.navigate(['/login']);
   }
 
-  devices = [
-    { id: 1, name: 'Czujnik w salonie' },
-    { id: 2, name: 'Czujnik w kuchni' },
-    { id: 3, name: 'Czujnik w sypialni' }
-  ];
-
-  navigateToDeviceControl(deviceId: number): void {
-    this.router.navigate(['/device-interface', deviceId]);
+  // Nawigacja do interfejsu urządzenia
+  navigateToDeviceControl(deviceId: string): void {
+    this.router.navigate(['/devices', deviceId]);
   }
 
-  // Funkcja generująca losowy ciąg znaków dla nowego urządzenia
-  generateRandomString(length: number): string {
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      result += characters.charAt(Math.floor(Math.random() * characters.length));
+  // Zmiana nazwy urządzenia
+  changeDeviceName(deviceId: string): void {
+    const newName = prompt('Podaj nową nazwę urządzenia:');
+    if (newName && newName.trim() !== '') {
+      this.deviceService.updateDeviceName(deviceId, newName).subscribe({
+        next: () => {
+          this.message = `Nazwa urządzenia została zmieniona na "${newName}"`;
+          this.loadDevices();
+        },
+        error: (err) => {
+          this.message = 'Błąd podczas zmiany nazwy urządzenia!';
+          console.error(err);
+        }
+      });
+    } else {
+      this.message = 'Nieprawidłowa nazwa urządzenia!';
     }
-    return result;
   }
 
-  // Funkcja obsługująca dodawanie nowego urządzenia
-  promptForDevice(): void {
-    const randomDeviceName = this.generateRandomString(10); // Generowanie losowej nazwy
-    const newDevice = {
-      id: this.devices.length + 1,
-      name: `Urządzenie-${randomDeviceName}`
-    };
-    this.devices.push(newDevice);
+  // Usunięcie urządzenia
+  removeDevice(deviceId: string): void {
+    if (confirm('Czy na pewno chcesz usunąć to urządzenie? Tej operacji nie można cofnąć.')) {
+      this.deviceService.deleteDevice(deviceId).subscribe({
+        next: () => {
+          this.devices = this.devices.filter(device => device.id !== deviceId);
+          this.message = 'Urządzenie usunięte pomyślnie!';
+        },
+        error: (err) => {
+          this.message = 'Błąd usuwania urządzenia!';
+          console.error(err);
+        }
+      });
+    }
   }
-
-  
-
-  // Usunięcie urządzenia z listy
-  removeDevice(deviceId: number): void {
-    this.devices = this.devices.filter(device => device.id !== deviceId);
-  }
-
- 
-
- 
-
 }

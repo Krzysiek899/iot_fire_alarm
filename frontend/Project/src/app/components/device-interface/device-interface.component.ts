@@ -1,78 +1,136 @@
-import { Component, OnInit } from '@angular/core';
+// device-interface.component.ts
+import {Component, OnInit, OnDestroy, AfterViewInit} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from '../../services/auth.service';
 import { FormsModule } from '@angular/forms';
-import Chart from 'chart.js/auto';
-import { ActivatedRoute, Router } from '@angular/router';
-import { Observable, interval } from 'rxjs';
-import { map } from 'rxjs/operators';
 import { NgxGaugeModule } from 'ngx-gauge';
+import { Router, ActivatedRoute } from '@angular/router';
+import { DeviceService } from '../../services/device.service';
+import { Device } from '../../models/device.model'; // Upewnij się, że masz interfejs Device
+import { Subscription, interval } from 'rxjs';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { map } from 'rxjs/operators';
+import {
+  Chart,
+  registerables,
+  CategoryScale,
+  LinearScale,
+  LineElement,
+  PointElement,
+  Title,
+  Tooltip,
+  Legend, ChartOptions
+} from 'chart.js';
 
 
 @Component({
   selector: 'app-device-interface',
-  imports: [CommonModule, FormsModule, NgxGaugeModule],
   standalone: true,
+  imports: [CommonModule, FormsModule, NgxGaugeModule],
   templateUrl: './device-interface.component.html',
-  styleUrl: './device-interface.component.css',
+  styleUrls: ['./device-interface.component.css'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
-export class DeviceInterfaceComponent {
-  deviceId!: number;
+export class DeviceInterfaceComponent implements OnInit, OnDestroy, AfterViewInit {
+  deviceId!: string;
   temperatureThreshold: number = 30;
   mg2Threshold: number = 50;
+  co2Threshold: number = 400; // Dodany próg CO2
+  device: Device | undefined;
   message: string = '';
-  
-  
-  // Zainicjalizowane wartości dla czujników
-  temperatureValue: number = 22; 
+  alarmMessage: string = '';
+
+  // Wartości czujników
+  temperatureValue: number = 22;
   mq2Value: number = 150;
 
+  // Dane do wykresów
+  temperatureData: number[] = [];
+  mq2Data: number[] = [];
+  chartLabels: string[] = [];
 
-  temperatureData: number[] = [22, 23, 24, 23, 25, 26, 27];
-  mq2Data: number[] = [100, 120, 150, 130, 160, 170, 180];
+  // Referencje do wykresów
+  temperatureChart!: Chart;
+  mq2Chart!: Chart;
 
-  // Observable dla temperatury i MQ2 (symulowane dane)
-  temperature$: Observable<number>;
-  mq2$: Observable<number>;
+  // Subskrypcje
+  private subscriptions: Subscription = new Subscription();
 
-  constructor(private route: ActivatedRoute, private router: Router) {
-    this.route.params.subscribe(params => {
-      this.deviceId = params['id'];
-    });
-
-    // Symulowanie wartości co 2 sekundy
-    this.temperature$ = interval(2000).pipe(
-      map(() => this.getRandomValue(20, 30))
-    );
-
-    this.mq2$ = interval(2000).pipe(
-      map(() => this.getRandomValue(100, 300))
-    );
-  }
+  constructor(
+      private route: ActivatedRoute,
+      private router: Router,
+      private deviceService: DeviceService
+  ) {}
 
   ngOnInit(): void {
-    // Inicjalizacja wartości czujników jeśli przyszły z backendu jako null
-    this.temperatureValue = this.temperatureValue ?? 22;
-    this.mq2Value = this.mq2Value ?? 150;
+    // Pobranie ID urządzenia z parametrów trasy
+    this.subscriptions.add(
+        this.route.params.subscribe(params => {
+          this.deviceId = params['id'];
+          this.fetchDeviceData();
+        })
+    );
   }
 
-  getRandomValue(min: number, max: number): number {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
-
+    // Inicjalizacja wykresów
   ngAfterViewInit(): void {
-    this.renderTemperatureChart();
-    this.renderMq2Chart();
+      //this.initializeCharts()
+
+
+    // Symulowanie odbioru danych sensorów co 2 sekundy
+    this.subscriptions.add(
+        interval(2000).pipe(
+            map(() => this.getRandomValue(20, 30))
+        ).subscribe(value => {
+          this.updateTemperature(value);
+        })
+    );
+
+    this.subscriptions.add(
+        interval(2000).pipe(
+            map(() => this.getRandomValue(100, 300))
+        ).subscribe(value => {
+          this.updateMq2(value);
+        })
+    );
+
+    // Symulowanie alarmów co 10 sekund
+    // this.subscriptions.add(
+    //     interval(10000).subscribe(() => {
+    //       this.triggerAlarm(`Alarm na urządzeniu ID ${this.deviceId} o godzinie ${new Date().toLocaleTimeString()}`);
+    //     })
+    // );
   }
 
-  renderTemperatureChart(): void {
-    const ctx = document.getElementById('temperatureChart') as HTMLCanvasElement;
-    new Chart(ctx, {
+  ngOnDestroy(): void {
+    this.subscriptions.unsubscribe();
+  }
+
+  fetchDeviceData(): void {
+    this.deviceService.getDevice(this.deviceId).subscribe({
+      next: (device: Device) => {
+        this.device = device;
+        // Możesz również zainicjalizować inne dane urządzenia tutaj
+      },
+      error: (err) => {
+        console.error('Błąd podczas pobierania danych urządzenia:', err);
+        this.message = 'Nie udało się pobrać danych urządzenia.';
+      }
+    });
+  }
+
+  initializeCharts(): void {
+    const tempCtx = document.getElementById('temperatureChart') as HTMLCanvasElement;
+    const mq2Ctx = document.getElementById('mq2Chart') as HTMLCanvasElement;
+
+    if (!tempCtx || !mq2Ctx) {
+      console.error('Canvas element not found!');
+      return;
+    }
+
+    this.temperatureChart = new Chart(tempCtx, {
       type: 'line',
       data: {
-        labels: ['1 min', '2 min', '3 min', '4 min', '5 min', '6 min', '7 min'],
+        labels: this.chartLabels,
         datasets: [{
           label: 'Temperatura (°C)',
           data: this.temperatureData,
@@ -83,22 +141,15 @@ export class DeviceInterfaceComponent {
           tension: 0.3
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        aspectRatio: 2
-      }
+      options: this.getChartOptions()
     });
-  }
 
-  renderMq2Chart(): void {
-    const ctx = document.getElementById('mq2Chart') as HTMLCanvasElement;
-    new Chart(ctx, {
+    this.mq2Chart = new Chart(mq2Ctx, {
       type: 'line',
       data: {
-        labels: ['1 min', '2 min', '3 min', '4 min', '5 min', '6 min', '7 min'],
+        labels: this.chartLabels,
         datasets: [{
-          label: 'Stężenie gazu MQ2',
+          label: 'Stężenie gazu MQ2 (ppm)',
           data: this.mq2Data,
           borderColor: 'blue',
           borderWidth: 2,
@@ -107,25 +158,104 @@ export class DeviceInterfaceComponent {
           tension: 0.3
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        aspectRatio: 2
+      options: this.getChartOptions()
+    });
+  }
+
+
+  getChartOptions(): ChartOptions {
+    return {
+      responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 2,
+      scales: {
+        x: {
+          title: {
+            display: true,
+            text: 'Czas'
+          }
+        },
+        y: {
+          title: {
+            display: true,
+            text: 'Wartość'
+          },
+          beginAtZero: true
+        }
+      }
+    };
+  }
+
+  getRandomValue(min: number, max: number): number {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  updateTemperature(value: number): void {
+    console.log("UpdateTemperature", value);
+    this.temperatureValue = value;
+    this.temperatureData.push(value);
+    if (this.temperatureData.length > 7) {
+      this.temperatureData.shift();
+    }
+    this.temperatureChart?.update();
+  }
+
+  updateMq2(value: number): void {
+    console.log("UpdateMq2", value);
+    this.mq2Value = value;
+    this.mq2Data.push(value);
+    if (this.mq2Data.length > 7) {
+      this.mq2Data.shift();
+    }
+    this.mq2Chart?.update();
+  }
+
+
+  triggerAlarm(message: string): void {
+    this.alarmMessage = message;
+    // Możesz dodać dodatkowe logiki, np. powiadomienia toast
+  }
+
+  saveSettings(): void {
+    // Aktualizacja progów w backendzie
+    this.deviceService.updateThreshold(this.deviceId, 'temperature', this.temperatureThreshold).subscribe({
+      next: () => {
+        this.message = `Próg temperatury został zaktualizowany!`;
+      },
+      error: (err) => {
+        console.error('Błąd podczas aktualizacji progu temperatury:', err);
+        this.message = 'Nie udało się zaktualizować progu temperatury.';
+      }
+    });
+
+    this.deviceService.updateThreshold(this.deviceId, 'smoke', this.mg2Threshold).subscribe({
+      next: () => {
+        this.message += ` Próg czujnika MQ2 został zaktualizowany!`;
+      },
+      error: (err) => {
+        console.error('Błąd podczas aktualizacji progu MQ2:', err);
+        this.message += ' Nie udało się zaktualizować progu MQ2.';
+      }
+    });
+
+    this.deviceService.updateThreshold(this.deviceId, 'co2', this.co2Threshold).subscribe({
+      next: () => {
+        this.message += ` Próg CO2 został zaktualizowany!`;
+      },
+      error: (err) => {
+        console.error('Błąd podczas aktualizacji progu CO2:', err);
+        this.message += ' Nie udało się zaktualizować progu CO2.';
       }
     });
   }
 
-  saveSettings(): void {
-    this.message = `Ustawienia dla urządzenia ID ${this.deviceId} zostały zapisane!`;
+  dismissAlarm(): void {
+    this.alarmMessage = '';  // Usuwa komunikat alarmu
   }
 
-  removeDevice(): void {
-    alert(`Urządzenie ID ${this.deviceId} zostało usunięte.`);
-    this.router.navigate(['/client']);
-  }
 
   navigateToDeviceList(): void {
-    this.router.navigate(['/client']);
+    this.router.navigate(['/devices']);
   }
 
   onLogout(): void {

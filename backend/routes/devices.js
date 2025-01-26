@@ -32,15 +32,11 @@ router.get('/:deviceId', authenticateToken, (req, res) => {
     const deviceId = req.params.deviceId;
 
     const query = `
-        SELECT d.id, d.device_name, d.serial_number, d.mac_address, d.status, d.last_seen, 
-               t.temperature_threshold, t.smoke_threshold, t.co2_threshold,
-               s.temperature, s.smoke_level, s.co2_level, s.received_at
+        SELECT d.id, d.device_name, d.serial_number, d.mac_address, d.mqtt_topic, d.status, d.last_seen, 
+               t.temperature_threshold, t.smoke_threshold
         FROM devices d
         LEFT JOIN thresholds t ON d.id = t.device_id
-        LEFT JOIN sensor_readings s ON d.id = s.device_id
-        WHERE d.id = ? AND d.user_id = ?
-        ORDER BY s.received_at DESC
-        LIMIT 1`;
+        WHERE d.id = ? AND d.user_id = ?`;
 
     db.query(query, [deviceId, userId], (err, results) => {
         if (err) {
@@ -53,47 +49,46 @@ router.get('/:deviceId', authenticateToken, (req, res) => {
     });
 });
 
-/**
- * Pobranie historii pomiarów urządzenia w podanym przedziale czasowym
- */
-router.get('/:deviceId/history', authenticateToken, (req, res) => {
+router.put('/:deviceId/name', authenticateToken, (req, res) => {
     const userId = req.user.id;
     const deviceId = req.params.deviceId;
-    const { startDate, endDate } = req.query;
+    const { newName } = req.body;
 
-    // Walidacja danych wejściowych
-    if (!startDate || !endDate) {
-        return res.status(400).json({ message: 'Podaj zakres dat: startDate i endDate' });
+    if (!newName || newName.trim() === '') {
+        return res.status(400).json({ message: 'Nowa nazwa urządzenia jest wymagana' });
     }
 
     const query = `
-        SELECT s.temperature, s.smoke_level, s.co2_level, s.received_at
-        FROM sensor_readings s
-        INNER JOIN devices d ON s.device_id = d.id
-        WHERE d.id = ? AND d.user_id = ? 
-        AND s.received_at BETWEEN ? AND ?
-        ORDER BY s.received_at ASC
-    `;
+        UPDATE devices 
+        SET device_name = ? 
+        WHERE id = ? AND user_id = ?`;
 
-    db.query(query, [deviceId, userId, startDate, endDate], (err, results) => {
+    db.query(query, [newName, deviceId, userId], (err, result) => {
         if (err) {
             return res.status(500).json({ message: 'Błąd serwera', error: err });
         }
-        if (results.length === 0) {
-            return res.status(404).json({ message: 'Brak danych dla podanego zakresu dat' });
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Nie znaleziono urządzenia lub brak uprawnień' });
         }
-        res.json(results);
+
+        res.status(200).json({ message: 'Nazwa urządzenia została zmieniona pomyślnie' });
     });
 });
 
 
-router.post('/:deviceId/reset', authenticateToken, (req, res) => {
+
+
+router.delete('/:deviceId', authenticateToken, (req, res) => {
     const userId = req.user.id;
     const deviceId = req.params.deviceId;
 
     const query = `SELECT mac_address FROM devices WHERE id = ? AND user_id = ?`;
     db.query(query, [deviceId, userId], (err, result) => {
-        if (err) return res.status(500).json({ message: 'Błąd serwera', error: err });
+        if (err) {
+            return res.status(500).json({ message: 'Błąd serwera', error: err });
+        }
+
         if (result.length === 0) {
             return res.status(403).json({ message: 'Nie masz dostępu do tego urządzenia' });
         }
@@ -103,11 +98,25 @@ router.post('/:deviceId/reset', authenticateToken, (req, res) => {
         // Wysyłanie resetu do urządzenia przez MQTT
         sendCommandToDevice(userId, macAddress, 'reset', '', '1');
 
-        res.status(200).json({ message: 'Urządzenie zostało zresetowane' });
+        // Usunięcie urządzenia z bazy danych
+        const deleteQuery = `DELETE FROM devices WHERE id = ? AND user_id = ?`;
+
+        db.query(deleteQuery, [deviceId, userId], (err, deleteResult) => {
+            if (err) {
+                return res.status(500).json({ message: 'Błąd podczas usuwania urządzenia', error: err });
+            }
+
+            if (deleteResult.affectedRows === 0) {
+                return res.status(404).json({ message: 'Urządzenie nie zostało znalezione lub już zostało usunięte' });
+            }
+
+            res.status(200).json({ message: 'Urządzenie zostało zresetowane i usunięte' });
+        });
     });
 });
 
-router.post('/:deviceId/threshold/:type', authenticateToken, (req, res) => {
+
+router.put('/:deviceId/threshold/:type', authenticateToken, (req, res) => {
     const userId = req.user.id;
     const deviceId = req.params.deviceId;
     const thresholdValue = req.body.value;
@@ -153,6 +162,8 @@ router.post('/:deviceId/threshold/:type', authenticateToken, (req, res) => {
         });
     });
 });
+
+
 
 
 

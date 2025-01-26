@@ -38,10 +38,24 @@ export class LoginComponent {
   }
   
   onLogin(): void {
-    if (this.authService.login(this.email, this.password)) {
-      this.router.navigate(['/client']);
-    } else {
-      this.errorMessage = 'Nieprawidłowy email lub hasło!';
+    if (!this.email || !this.password) {
+      this.errorMessage = 'Wprowadź email i hasło!';
+      return;
     }
+  
+    this.authService.login(this.email, this.password).subscribe({
+      next: (response) => {
+        if (response.token) {
+          this.authService.saveToken(response.token);
+          this.router.navigate(['/devices']);
+        } else {
+          this.errorMessage = 'Nieprawidłowy email lub hasło!';
+        }
+      },
+      error: (error) => {
+        this.errorMessage = error.error?.message || 'Błąd logowania. Spróbuj ponownie.';
+      }
+    });
   }
+  
 }
