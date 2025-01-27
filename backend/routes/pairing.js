@@ -3,6 +3,8 @@ const db = require('../config/db');
 
 const router = express.Router();
 
+require('dotenv').config();
+
 /**
  * Rejestracja urządzenia za pomocą tokena powiązania
  */
@@ -29,46 +31,61 @@ router.post('/register-device', (req, res) => {
 
         const userId = results[0].user_id;
 
-        // Generowanie tematu MQTT w formacie 'userID/macAddress/'
-        const mqttTopic = `${userId}/${mac_address}/`;
-
-        // Dodanie urządzenia do bazy danych
-        const insertDeviceQuery = `
-            INSERT INTO devices (user_id, device_name, serial_number, mac_address, mqtt_topic, status)
-            VALUES (?, ?, ?, ?, ?, 'active')
+        // Sprawdzenie czy urządzenie już istnieje
+        const checkDeviceQuery = `
+            SELECT id FROM devices WHERE serial_number = ? OR mac_address = ?
         `;
 
-        db.query(insertDeviceQuery, [userId, device_name, serial_number, mac_address, mqttTopic], (err, result) => {
+        db.query(checkDeviceQuery, [serial_number, mac_address], (err, deviceResults) => {
             if (err) {
-                return res.status(500).json({ message: 'Błąd podczas dodawania urządzenia', error: err });
+                return res.status(500).json({ message: 'Błąd sprawdzania urządzenia', error: err });
+            }
+            if (deviceResults.length > 0) {
+                return res.status(400).json({ message: 'Urządzenie z tym numerem seryjnym lub MAC już istnieje' });
             }
 
-            const deviceId = result.insertId;
+            // Generowanie tematu MQTT
+            const mqttTopic = `${userId}/${mac_address.replace(/:/g, '')}/`;
 
-            // Ustawienie domyślnych progów dla urządzenia
-            const insertThresholdsQuery = `
-                INSERT INTO thresholds (device_id, temperature_threshold,  smoke_threshold)
-                VALUES (?, ?, ?)
+            // Dodanie urządzenia do bazy danych
+            const insertDeviceQuery = `
+                INSERT INTO devices (user_id, device_name, serial_number, mac_address, mqtt_topic, status)
+                VALUES (?, ?, ?, ?, ?, 'active')
             `;
 
-            const defaultThresholds = [deviceId, 25.0, 0.5]; // Domyślne wartości progów
-
-            db.query(insertThresholdsQuery, defaultThresholds, (err) => {
+            db.query(insertDeviceQuery, [userId, device_name, serial_number, mac_address, mqttTopic], (err, result) => {
                 if (err) {
-                    return res.status(500).json({ message: 'Błąd ustawiania domyślnych progów', error: err });
+                    return res.status(500).json({ message: 'Błąd podczas dodawania urządzenia', error: err });
                 }
 
-                // Oznaczenie tokena jako użytego
-                const updateTokenQuery = `
-                    UPDATE user_tokens SET used = TRUE WHERE token = ?
+                const deviceId = result.insertId;
+
+                // Ustawienie domyślnych progów dla urządzenia
+                const insertThresholdsQuery = `
+                    INSERT INTO thresholds (device_id, temperature_threshold, smoke_threshold)
+                    VALUES (?, ?, ?)
                 `;
 
-                db.query(updateTokenQuery, [token], (err) => {
+                const defaultThresholds = [deviceId, 25.0, 0.5];
+
+                db.query(insertThresholdsQuery, defaultThresholds, (err) => {
                     if (err) {
-                        return res.status(500).json({ message: 'Błąd aktualizacji tokena', error: err });
+                        return res.status(500).json({ message: 'Błąd ustawiania domyślnych progów', error: err });
                     }
 
-                    res.json({ message: 'Urządzenie zarejestrowane pomyślnie', mqtt_topic: mqttTopic });
+                    // Oznaczenie tokena jako użytego
+                    const updateTokenQuery = `
+                        UPDATE user_tokens SET used = TRUE WHERE token = ?
+                    `;
+
+                    db.query(updateTokenQuery, [token], (err) => {
+                        if (err) {
+                            return res.status(500).json({ message: 'Błąd aktualizacji tokena', error: err });
+                        }
+
+                        res.json({ mqtt_topic: mqttTopic, mqttBroker: process.env.MQTT_BROKER_URL});
+                        //res.send(mqttTopic);
+                    });
                 });
             });
         });

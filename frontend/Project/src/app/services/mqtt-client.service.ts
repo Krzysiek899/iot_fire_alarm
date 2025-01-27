@@ -14,19 +14,19 @@ export class MqttSensorService {
      * @returns Observable z odczytami sensorów i alarmami
      */
     subscribeToTopic(topic: string): Observable<{ type: string; value: any }> {
-        const temperature$ = this.mqttService.observe(`${topic}/sensors/temperature`).pipe(
+        const temperature$ = this.mqttService.observe(`${topic}sensors/temperature`).pipe(
             map((message: IMqttMessage) => ({ type: 'temperature', value: message.payload.toString() }))
         );
 
-        const pressure$ = this.mqttService.observe(`${topic}/sensors/pressure`).pipe(
+        const pressure$ = this.mqttService.observe(`${topic}sensors/pressure`).pipe(
             map((message: IMqttMessage) => ({ type: 'pressure', value: message.payload.toString() }))
         );
 
-        const smoke$ = this.mqttService.observe(`${topic}/sensors/smoke`).pipe(
+        const smoke$ = this.mqttService.observe(`${topic}sensors/smoke`).pipe(
             map((message: IMqttMessage) => ({ type: 'smoke', value: message.payload.toString() }))
         );
 
-        const alarms$ = this.mqttService.observe(`${topic}/alarms`).pipe(
+        const alarms$ = this.mqttService.observe(`${topic}alarm`).pipe(
             map((message: IMqttMessage) => ({ type: 'alarm', value: message.payload.toString() }))
         );
 

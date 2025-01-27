@@ -96,7 +96,7 @@ router.delete('/:deviceId', authenticateToken, (req, res) => {
         const macAddress = result[0].mac_address;
 
         // Wysyłanie resetu do urządzenia przez MQTT
-        sendCommandToDevice(userId, macAddress, 'reset', '', '1');
+        sendCommandToDevice(userId, macAddress.replace(/:/g, ""), 'config/reset', '', '1');
 
         // Usunięcie urządzenia z bazy danych
         const deleteQuery = `DELETE FROM devices WHERE id = ? AND user_id = ?`;
@@ -156,7 +156,7 @@ router.put('/:deviceId/threshold/:type', authenticateToken, (req, res) => {
             if (err) return res.status(500).json({ message: 'Błąd aktualizacji progu', error: err });
 
             // Wysyłanie nowej wartości progu do urządzenia przez MQTT
-            sendCommandToDevice(userId, macAddress, 'threshold', type, thresholdValue.toString());
+            sendCommandToDevice(userId, macAddress.replace(/:/g, ""), 'config/threshold', type, thresholdValue.toString());
 
             res.status(200).json({ message: `Próg ${type} ustawiony na ${thresholdValue}` });
         });

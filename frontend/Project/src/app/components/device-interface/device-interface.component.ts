@@ -6,7 +6,7 @@ import { NgxGaugeModule } from 'ngx-gauge';
 import { Router, ActivatedRoute } from '@angular/router';
 import { DeviceService } from '../../services/device.service';
 import { Device } from '../../models/device.model'; // Upewnij się, że masz interfejs Device
-import {Subscription, interval, Observable, filter, startWith, catchError, of} from 'rxjs';
+import {Subscription, interval, Observable, filter, startWith, catchError, of, async} from 'rxjs';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { map } from 'rxjs/operators';
 import {
@@ -21,12 +21,13 @@ import {
   Legend, ChartOptions
 } from 'chart.js';
 import {MqttSensorService} from "../../services/mqtt-client.service";
+import {MultiplyAndRoundPipe} from "../../pressure.pipe";
 
 
 @Component({
   selector: 'app-device-interface',
   standalone: true,
-  imports: [CommonModule, FormsModule, NgxGaugeModule],
+  imports: [CommonModule, FormsModule, NgxGaugeModule, MultiplyAndRoundPipe],
   templateUrl: './device-interface.component.html',
   styleUrls: ['./device-interface.component.css'],
   schemas: [CUSTOM_ELEMENTS_SCHEMA]
@@ -76,6 +77,13 @@ export class DeviceInterfaceComponent implements OnInit, OnDestroy, AfterViewIni
             if (this.device) {
               this.initializeMqttSubscriptions();
             }
+            this.subscriptions.add(
+                this.alarms$.subscribe(alarm => {
+                  if (alarm) {
+                    this.triggerAlarm(`Otrzymano alarm: ${alarm}`);
+                  }
+                })
+            );
           });
         })
     );
@@ -316,4 +324,7 @@ export class DeviceInterfaceComponent implements OnInit, OnDestroy, AfterViewIni
     localStorage.removeItem('user');
     this.router.navigate(['/login']);
   }
+
+  protected readonly async = async;
+  protected readonly Number = Number;
 }

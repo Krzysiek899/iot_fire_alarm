@@ -15,14 +15,14 @@ const client = mqtt.connect(MQTT_BROKER_URL, MQTT_OPTIONS);
 client.on('connect', () => {
     console.log('Połączono z brokerem MQTT');
 
-    // Subskrypcja tematów dla odbioru danych
-    client.subscribe('+/+/sensors/#', (err) => {
-        if (!err) {
-            console.log('Subskrypcja wszystkich tematów MQTT');
-        } else {
-            console.error('Błąd subskrypcji:', err);
-        }
-    });
+    // // Subskrypcja tematów dla odbioru danych
+    // client.subscribe('+/+/sensors/#', (err) => {
+    //     if (!err) {
+    //         console.log('Subskrypcja wszystkich tematów MQTT');
+    //     } else {
+    //         console.error('Błąd subskrypcji:', err);
+    //     }
+    // });
 });
 
 // Obsługa wiadomości przychodzących (od urządzeń)

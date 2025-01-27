@@ -24,6 +24,26 @@ app.use(cors({
     allowedHeaders: 'Content-Type, Authorization'
 }));
 
+app.use((req, res, next) => {
+    if (req.path === '/api/pairing/register-device') {
+        res.removeHeader('X-Powered-By');
+        res.removeHeader('ETag');
+        res.removeHeader('Vary');
+        res.removeHeader('Access-Control-Allow-Origin');
+
+        res.setHeader('Content-Type', 'text/plain');
+    }
+    next();
+});
+
+
+app.use((req, res, next) => {
+    res.on('finish', () => {
+        console.log('Nagłówki wysłane:', res.getHeaders());
+    });
+    next();
+});
+
 // Trasy
 app.use('/api/auth', authRoutes);
 app.use('/api/test', testRoutes);
